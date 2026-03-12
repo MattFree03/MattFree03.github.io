@@ -1,1 +1,1269 @@
-# MattFree03.github.io
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>RaceIQ — AI Racing Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080a08;
+    --bg2: #0f120f;
+    --bg3: #161a16;
+    --card: #111511;
+    --border: #1e271e;
+    --green: #00c853;
+    --green-dim: #00843a;
+    --green-glow: rgba(0,200,83,0.15);
+    --gold: #ffc107;
+    --gold-dim: rgba(255,193,7,0.15);
+    --red: #ff3b3b;
+    --amber: #ff9800;
+    --text: #e8f0e8;
+    --text-dim: #7a907a;
+    --text-faint: #3a4a3a;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+background: var(–bg);
+color: var(–text);
+font-family: var(–font-body);
+font-size: 15px;
+line-height: 1.5;
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background-image: url(“data:image/svg+xml,%3Csvg viewBox=‘0 0 200 200’ xmlns=‘http://www.w3.org/2000/svg’%3E%3Cfilter id=‘n’%3E%3CfeTurbulence type=‘fractalNoise’ baseFrequency=‘0.9’ numOctaves=‘4’ stitchTiles=‘stitch’/%3E%3C/filter%3E%3Crect width=‘100%25’ height=‘100%25’ filter=‘url(%23n)’ opacity=‘0.03’/%3E%3C/svg%3E”);
+pointer-events: none;
+z-index: 0;
+opacity: 0.4;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; padding-bottom: 80px; position: relative; z-index: 1; }
+.screen.active { display: block; animation: fadeUp 0.35s ease; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── HEADER ── */
+.app-header {
+display: flex; align-items: center; gap: 10px;
+padding: 16px 20px 12px;
+border-bottom: 1px solid var(–border);
+background: linear-gradient(180deg, rgba(0,200,83,0.06) 0%, transparent 100%);
+}
+.logo-mark {
+width: 36px; height: 36px; border-radius: 8px;
+background: var(–green);
+display: flex; align-items: center; justify-content: center;
+font-family: var(–font-display);
+font-size: 18px; color: #000; letter-spacing: 0;
+flex-shrink: 0;
+}
+.logo-text { font-family: var(–font-display); font-size: 26px; letter-spacing: 2px; color: var(–text); line-height: 1; }
+.logo-text span { color: var(–green); }
+.header-sub { font-size: 10px; color: var(–text-dim); letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
+
+/* ── SECTION ── */
+.section { padding: 20px; }
+.section + .section { padding-top: 0; }
+.section-label {
+font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+color: var(–green); font-weight: 600; margin-bottom: 10px;
+display: flex; align-items: center; gap: 6px;
+}
+.section-label::after { content: ‘’; flex: 1; height: 1px; background: var(–border); }
+
+/* ── INPUTS ── */
+.input-field {
+width: 100%; background: var(–bg3); border: 1px solid var(–border);
+color: var(–text); font-family: var(–font-body); font-size: 15px;
+padding: 13px 15px; border-radius: 10px; outline: none;
+transition: border-color 0.2s, box-shadow 0.2s;
+-webkit-appearance: none;
+}
+.input-field:focus { border-color: var(–green); box-shadow: 0 0 0 3px var(–green-glow); }
+.input-field::placeholder { color: var(–text-faint); }
+textarea.input-field { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+.input-row { display: flex; gap: 10px; align-items: stretch; }
+.input-row .input-field { flex: 1; }
+
+.input-hint { font-size: 12px; color: var(–text-dim); margin-top: 6px; padding-left: 2px; }
+
+/* ── EW TERMS ROW ── */
+.ew-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.ew-row select.input-field { flex: 1; }
+
+/* ── HORSE ODDS TABLE ── */
+.odds-table { display: flex; flex-direction: column; gap: 8px; }
+.odds-row {
+display: grid; grid-template-columns: 1fr 100px;
+gap: 8px; align-items: center;
+}
+.odds-row-inner { display: flex; gap: 8px; }
+.add-horse-btn {
+display: flex; align-items: center; justify-content: center; gap: 6px;
+background: transparent; border: 1px dashed var(–border);
+color: var(–text-dim); font-family: var(–font-body); font-size: 13px;
+padding: 10px; border-radius: 10px; width: 100%; cursor: pointer;
+transition: all 0.2s; margin-top: 4px;
+}
+.add-horse-btn:active { border-color: var(–green); color: var(–green); }
+.remove-btn {
+background: transparent; border: 1px solid var(–border);
+color: var(–text-faint); font-size: 18px; width: 38px; height: 38px;
+border-radius: 8px; cursor: pointer; display: flex;
+align-items: center; justify-content: center; flex-shrink: 0;
+transition: all 0.2s;
+}
+.remove-btn:active { border-color: var(–red); color: var(–red); }
+
+/* ── BUTTONS ── */
+.btn-primary {
+width: 100%; padding: 16px; background: var(–green);
+color: #000; font-family: var(–font-display);
+font-size: 20px; letter-spacing: 2px;
+border: none; border-radius: 12px; cursor: pointer;
+transition: all 0.2s; position: relative; overflow: hidden;
+}
+.btn-primary::after {
+content: ‘’; position: absolute; inset: 0;
+background: rgba(255,255,255,0.1); opacity: 0; transition: opacity 0.15s;
+}
+.btn-primary:active::after { opacity: 1; }
+.btn-primary:disabled { background: var(–text-faint); color: var(–bg); cursor: not-allowed; }
+
+.btn-secondary {
+background: var(–bg3); border: 1px solid var(–border);
+color: var(–text); font-family: var(–font-body); font-size: 14px;
+padding: 12px 20px; border-radius: 10px; cursor: pointer;
+transition: all 0.2s;
+}
+.btn-secondary:active { border-color: var(–green); color: var(–green); }
+
+/* ── API KEY TOGGLE ── */
+.api-key-wrap { position: relative; }
+.api-key-wrap .input-field { padding-right: 50px; font-family: var(–font-mono); font-size: 13px; }
+.toggle-vis {
+position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+background: none; border: none; color: var(–text-dim); cursor: pointer;
+font-size: 16px; padding: 4px;
+}
+
+/* ── LOADING SCREEN ── */
+.loading-container {
+display: flex; flex-direction: column; align-items: center;
+justify-content: center; min-height: 70vh; padding: 40px 20px; gap: 30px;
+}
+.spinner-ring {
+width: 80px; height: 80px; position: relative;
+}
+.spinner-ring::before, .spinner-ring::after {
+content: ‘’; position: absolute; inset: 0;
+border-radius: 50%; border: 2px solid transparent;
+}
+.spinner-ring::before {
+border-top-color: var(–green);
+animation: spin 1s linear infinite;
+}
+.spinner-ring::after {
+border-bottom-color: var(–green-dim);
+animation: spin 1.5s linear infinite reverse;
+inset: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-icon {
+position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+font-size: 28px; animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.loading-race-name {
+font-family: var(–font-display); font-size: 28px; letter-spacing: 2px;
+color: var(–green); text-align: center;
+}
+.loading-status {
+font-size: 13px; color: var(–text-dim); text-align: center;
+min-height: 20px; transition: all 0.3s;
+}
+.progress-bar-wrap { width: 100%; max-width: 280px; }
+.progress-bar {
+height: 3px; background: var(–border); border-radius: 2px; overflow: hidden;
+}
+.progress-fill {
+height: 100%; background: var(–green); border-radius: 2px;
+transition: width 0.5s ease; width: 0%;
+}
+.progress-label { font-size: 11px; color: var(–text-faint); margin-top: 6px; text-align: center; font-family: var(–font-mono); }
+
+.log-feed {
+width: 100%; max-width: 340px; max-height: 180px; overflow-y: auto;
+background: var(–bg3); border: 1px solid var(–border); border-radius: 10px;
+padding: 12px 14px;
+}
+.log-entry {
+font-size: 12px; color: var(–text-dim); font-family: var(–font-mono);
+padding: 3px 0; border-bottom: 1px solid var(–border);
+animation: logIn 0.3s ease;
+display: flex; gap: 8px; align-items: flex-start;
+}
+.log-entry:last-child { border-bottom: none; }
+@keyframes logIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; } }
+.log-dot { color: var(–green); flex-shrink: 0; }
+
+/* ── RESULTS ── */
+.results-header {
+padding: 16px 20px 12px;
+border-bottom: 1px solid var(–border);
+display: flex; align-items: center; justify-content: space-between;
+}
+.race-title { font-family: var(–font-display); font-size: 22px; letter-spacing: 1px; }
+.race-meta { font-size: 11px; color: var(–text-dim); margin-top: 2px; }
+
+.tabs {
+display: flex; gap: 4px; padding: 12px 16px 0;
+border-bottom: 1px solid var(–border);
+}
+.tab {
+padding: 9px 14px; font-size: 13px; font-weight: 500;
+background: transparent; border: 1px solid var(–border);
+border-bottom: none; color: var(–text-dim); cursor: pointer;
+border-radius: 8px 8px 0 0; transition: all 0.2s;
+}
+.tab.active { background: var(–bg3); color: var(–green); border-color: var(–green); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── HORSE CARD ── */
+.horse-card {
+margin: 12px 16px; background: var(–card);
+border: 1px solid var(–border); border-radius: 14px; overflow: hidden;
+transition: box-shadow 0.2s;
+}
+.horse-card.value-win { border-color: var(–green); box-shadow: 0 0 16px var(–green-glow); }
+.horse-card.value-ew { border-color: var(–gold); box-shadow: 0 0 16px var(–gold-dim); }
+.horse-card.value-both { border: 2px solid var(–green); box-shadow: 0 0 20px var(–green-glow), 0 0 30px var(–gold-dim); }
+
+.card-header {
+display: flex; align-items: stretch; gap: 0;
+}
+.silks-strip {
+width: 8px; flex-shrink: 0; border-radius: 0;
+}
+.card-header-inner {
+flex: 1; padding: 14px 14px 12px; display: flex; justify-content: space-between; align-items: flex-start;
+}
+.horse-number {
+font-family: var(–font-mono); font-size: 12px; color: var(–text-faint);
+background: var(–bg3); padding: 1px 6px; border-radius: 4px; margin-bottom: 4px;
+display: inline-block;
+}
+.horse-name { font-family: var(–font-display); font-size: 22px; letter-spacing: 1px; color: var(–text); line-height: 1.1; }
+.horse-connections { font-size: 11px; color: var(–text-dim); margin-top: 4px; }
+.horse-connections b { color: var(–text); font-weight: 500; }
+.win-prob-badge {
+text-align: right; flex-shrink: 0;
+}
+.win-prob-number { font-family: var(–font-display); font-size: 32px; color: var(–green); line-height: 1; }
+.win-prob-label { font-size: 10px; color: var(–text-faint); letter-spacing: 1px; text-transform: uppercase; }
+
+.card-body { padding: 0 14px 14px; }
+
+/* Suitability bar */
+.suit-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.suit-label { font-size: 11px; color: var(–text-dim); width: 80px; flex-shrink: 0; }
+.suit-bar-wrap { flex: 1; height: 6px; background: var(–bg3); border-radius: 3px; overflow: hidden; }
+.suit-bar-fill {
+height: 100%; border-radius: 3px; transition: width 1s ease;
+background: linear-gradient(90deg, var(–green-dim), var(–green));
+}
+.suit-score { font-size: 12px; font-family: var(–font-mono); color: var(–text); width: 30px; text-align: right; }
+
+/* Form summary */
+.form-summary {
+font-size: 13px; color: var(–text-dim); line-height: 1.5;
+padding: 10px 12px; background: var(–bg3); border-radius: 8px; margin: 10px 0;
+border-left: 3px solid var(–border);
+}
+.key-insights {
+font-size: 12px; color: var(–text-dim); font-style: italic;
+padding: 8px 12px; border-left: 2px solid var(–green-dim); margin: 8px 0;
+}
+
+/* Value grid */
+.value-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.value-cell {
+background: var(–bg3); border: 1px solid var(–border);
+border-radius: 8px; padding: 10px 12px;
+}
+.value-cell-label { font-size: 10px; color: var(–text-faint); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.value-cell-val { font-family: var(–font-mono); font-size: 16px; font-weight: 500; color: var(–text); }
+
+.value-badge {
+display: inline-flex; align-items: center; gap: 6px;
+padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600;
+margin: 4px 0;
+}
+.badge-value { background: rgba(0,200,83,0.15); color: var(–green); border: 1px solid var(–green); }
+.badge-fair { background: rgba(255,152,0,0.12); color: var(–amber); border: 1px solid var(–amber); }
+.badge-over { background: rgba(255,59,59,0.12); color: var(–red); border: 1px solid var(–red); }
+
+.ew-section {
+background: var(–bg2); border: 1px solid var(–border);
+border-radius: 10px; padding: 12px; margin-top: 10px;
+}
+.ew-section-title {
+font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+color: var(–gold); font-weight: 600; margin-bottom: 8px;
+display: flex; align-items: center; gap: 6px;
+}
+.ew-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.ew-cell { text-align: center; }
+.ew-cell-label { font-size: 10px; color: var(–text-faint); text-transform: uppercase; letter-spacing: 0.5px; }
+.ew-cell-val { font-family: var(–font-mono); font-size: 14px; color: var(–text); margin-top: 2px; }
+
+.star-badge {
+display: inline-flex; align-items: center; gap: 4px;
+background: rgba(255,193,7,0.15); border: 1px solid var(–gold);
+color: var(–gold); font-size: 12px; font-weight: 600;
+padding: 4px 10px; border-radius: 6px; margin-top: 6px;
+}
+
+/* ── SUMMARY TAB ── */
+.summary-section { padding: 16px; }
+.summary-card {
+background: var(–card); border: 1px solid var(–border);
+border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+}
+.summary-card.win-value { border-left: 4px solid var(–green); }
+.summary-card.ew-value { border-left: 4px solid var(–gold); }
+.summary-row {
+display: flex; align-items: center; padding: 12px 14px; gap: 12px;
+}
+.summary-rank {
+font-family: var(–font-display); font-size: 24px; color: var(–text-faint);
+width: 28px; flex-shrink: 0; text-align: center;
+}
+.summary-horse-name { font-family: var(–font-display); font-size: 18px; color: var(–text); }
+.summary-bet-type {
+font-size: 11px; padding: 2px 8px; border-radius: 4px;
+background: var(–bg3); color: var(–text-dim);
+text-transform: uppercase; letter-spacing: 0.5px;
+display: inline-block; margin-top: 2px;
+}
+.summary-odds { font-family: var(–font-mono); font-size: 13px; color: var(–text-dim); margin-left: auto; text-align: right; }
+.ev-score { font-family: var(–font-display); font-size: 20px; }
+.ev-positive { color: var(–green); }
+.ev-negative { color: var(–red); }
+
+.narrative-box {
+background: var(–bg3); border: 1px solid var(–border);
+border-radius: 12px; padding: 16px; margin: 12px 0;
+font-size: 14px; color: var(–text-dim); line-height: 1.7;
+}
+.narrative-box .narrative-title {
+font-family: var(–font-display); font-size: 16px; letter-spacing: 1px;
+color: var(–green); margin-bottom: 10px;
+}
+
+/* ── DISCLAIMER ── */
+.disclaimer-bar {
+position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+background: rgba(8,10,8,0.95); border-top: 1px solid var(–border);
+padding: 8px 16px; backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+}
+.disclaimer-text {
+font-size: 10px; color: var(–text-faint); text-align: center; line-height: 1.4;
+letter-spacing: 0.2px;
+}
+.disclaimer-text b { color: var(–red); }
+
+/* ── ERROR ── */
+.error-banner {
+background: rgba(255,59,59,0.1); border: 1px solid rgba(255,59,59,0.3);
+color: var(–red); font-size: 13px; padding: 12px 16px;
+border-radius: 10px; margin: 16px; display: none; line-height: 1.5;
+}
+.error-banner.visible { display: block; }
+
+/* ── SCROLLABLE RESULTS ── */
+.cards-scroll { padding-bottom: 20px; }
+
+/* ── BACK BUTTON ── */
+.back-row {
+display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+}
+.back-btn {
+background: transparent; border: 1px solid var(–border);
+color: var(–text-dim); font-size: 13px; padding: 8px 14px;
+border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+transition: all 0.2s;
+}
+.back-btn:active { border-color: var(–green); color: var(–green); }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: var(–border); margin: 4px 16px; }
+
+/* ── SCROLL HINT ── */
+.scroll-hint {
+text-align: center; font-size: 11px; color: var(–text-faint);
+padding: 8px; letter-spacing: 0.5px;
+}
+
+/* ── ANIMATED ENTER ── */
+.horse-card { animation: cardIn 0.4s ease both; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; } }
+
+/* stagger */
+.horse-card:nth-child(1) { animation-delay: 0.05s; }
+.horse-card:nth-child(2) { animation-delay: 0.1s; }
+.horse-card:nth-child(3) { animation-delay: 0.15s; }
+.horse-card:nth-child(4) { animation-delay: 0.2s; }
+.horse-card:nth-child(5) { animation-delay: 0.25s; }
+.horse-card:nth-child(6) { animation-delay: 0.3s; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+text-align: center; padding: 40px 20px;
+color: var(–text-faint); font-size: 13px;
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.3; }
+
+/* ── RAW JSON TOGGLE ── */
+.raw-toggle {
+font-size: 11px; color: var(–text-faint); text-align: center;
+padding: 8px; cursor: pointer; text-decoration: underline;
+}
+.raw-json {
+background: var(–bg3); border: 1px solid var(–border);
+border-radius: 8px; margin: 8px 16px; padding: 12px;
+font-family: var(–font-mono); font-size: 10px;
+color: var(–text-dim); max-height: 300px; overflow-y: auto;
+display: none; white-space: pre-wrap; word-break: break-all;
+}
+
+/* collapsible card body */
+.card-collapse-btn {
+width: 100%; background: transparent; border: none; border-top: 1px solid var(–border);
+color: var(–text-faint); font-size: 12px; padding: 8px;
+cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+transition: color 0.2s;
+}
+.card-collapse-btn:active { color: var(–green); }
+.collapsible { transition: max-height 0.3s ease; overflow: hidden; }
+.collapsible.collapsed { max-height: 0; }
+
+/* EV bar */
+.ev-bar-wrap { margin: 8px 0; }
+.ev-bar-label { font-size: 11px; color: var(–text-faint); margin-bottom: 4px; display: flex; justify-content: space-between; }
+.ev-bar { height: 4px; background: var(–bg3); border-radius: 2px; overflow: visible; }
+.ev-fill { height: 100%; border-radius: 2px; max-width: 100%; min-width: 2px; }
+.ev-fill.positive { background: var(–green); }
+.ev-fill.negative { background: var(–red); }
+
+/* Fractional odds display helper */
+.odds-display { font-family: var(–font-mono); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ SCREEN 1: SEARCH ═══════════════════════════════════ -->
+
+<div id="screen-search" class="screen active">
+  <div class="app-header">
+    <div class="logo-mark">R</div>
+    <div>
+      <div class="logo-text">RACE<span>IQ</span></div>
+      <div class="header-sub">AI Racing Analyst</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Race</div>
+    <input type="text" id="race-search" class="input-field"
+      placeholder="e.g. Cheltenham 3:20 14 March 2026"
+      autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="input-hint">Enter venue, time, and date of the race</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Claude API Key</div>
+    <div class="api-key-wrap">
+      <input type="password" id="api-key" class="input-field"
+        placeholder="sk-ant-api03-..."
+        autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="toggle-vis" onclick="toggleApiVis()" aria-label="Toggle visibility">👁</button>
+    </div>
+    <div class="input-hint">Stored in memory only — never saved to disk</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Each-Way Terms</div>
+    <div class="ew-row">
+      <select id="ew-fraction" class="input-field">
+        <option value="0.2">1/5 odds</option>
+        <option value="0.25" selected>1/4 odds</option>
+        <option value="0.333">1/3 odds</option>
+        <option value="0.5">1/2 odds</option>
+      </select>
+      <select id="ew-places" class="input-field">
+        <option value="2">2 places</option>
+        <option value="3" selected>3 places</option>
+        <option value="4">4 places</option>
+        <option value="5">5 places</option>
+        <option value="6">6 places</option>
+      </select>
+    </div>
+    <div class="input-hint">Select each-way terms offered by your bookmaker</div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Runners & Bookmaker Odds</div>
+    <div class="odds-table" id="odds-table"></div>
+    <button class="add-horse-btn" onclick="addHorseRow()">＋ Add Runner</button>
+    <div class="input-hint">Enter decimal odds (e.g. 5.0 = 4/1). Leave blank if unknown.</div>
+  </div>
+
+  <div id="search-error" class="error-banner"></div>
+
+  <div class="section">
+    <button class="btn-primary" id="analyse-btn" onclick="startAnalysis()">
+      🏇 ANALYSE RACE
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SCREEN 2: LOADING ═══════════════════════════════════ -->
+
+<div id="screen-loading" class="screen">
+  <div class="loading-container">
+    <div class="spinner-ring">
+      <div class="spinner-icon">🏇</div>
+    </div>
+    <div class="loading-race-name" id="loading-race-name">Analysing…</div>
+    <div class="loading-status" id="loading-status">Connecting to AI…</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">0%</div>
+    </div>
+    <div class="log-feed" id="log-feed"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ SCREEN 3 & 4: RESULTS ═══════════════════════════════════ -->
+
+<div id="screen-results" class="screen">
+  <div class="back-row">
+    <button class="back-btn" onclick="newRace()">← New Race</button>
+    <div>
+      <div class="race-title" id="results-race-title">Race Results</div>
+      <div class="race-meta" id="results-race-meta"></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('runners', this)">Runners</button>
+    <button class="tab" onclick="switchTab('value', this)">⭐ Value</button>
+  </div>
+
+  <div id="tab-runners" class="tab-content active">
+    <div class="cards-scroll" id="cards-container"></div>
+  </div>
+
+  <div id="tab-value" class="tab-content">
+    <div class="summary-section" id="summary-container"></div>
+  </div>
+
+  <div id="results-error" class="error-banner"></div>
+  <div class="raw-toggle" onclick="toggleRaw()">Show raw API response</div>
+  <div class="raw-json" id="raw-json"></div>
+</div>
+
+<!-- ═══════════════════════════════════ DISCLAIMER ═══════════════════════════════════ -->
+
+<div class="disclaimer-bar">
+  <div class="disclaimer-text">
+    <b>⚠ FOR ENTERTAINMENT PURPOSES ONLY</b> — This tool does not constitute financial advice.
+    All betting involves risk. Please gamble responsibly. 18+ GambleAware.org
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════════════
+let appState = {
+  apiKey: '',
+  raceSearch: '',
+  ewFraction: 0.25,
+  ewPlaces: 3,
+  horses: [],        // {name, decimalOdds}
+  analysisResult: null,
+  narrative: ''
+};
+
+// ══════════════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Add 6 default horse rows
+  for (let i = 0; i < 6; i++) addHorseRow();
+  document.getElementById('race-search').value = '';
+});
+
+// ══════════════════════════════════════════════════════════════════════
+//  SCREEN NAVIGATION
+// ══════════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function newRace() {
+  appState.analysisResult = null;
+  showScreen('screen-search');
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  HORSE ROW MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════
+let horseRowCount = 0;
+
+function addHorseRow(name = '', odds = '') {
+  horseRowCount++;
+  const id = horseRowCount;
+  const table = document.getElementById('odds-table');
+  const row = document.createElement('div');
+  row.className = 'odds-row';
+  row.id = 'horse-row-' + id;
+  row.innerHTML = `
+    <div class="odds-row-inner">
+      <input type="text" class="input-field horse-name-input" placeholder="Horse name" value="${name}"
+        autocomplete="off" autocorrect="off" spellcheck="false" style="flex:2">
+      <input type="number" class="input-field horse-odds-input" placeholder="Odds" value="${odds}"
+        step="0.1" min="1" style="flex:1; min-width:70px">
+    </div>
+    <button class="remove-btn" onclick="removeHorseRow(${id})" aria-label="Remove">✕</button>
+  `;
+  table.appendChild(row);
+}
+
+function removeHorseRow(id) {
+  const row = document.getElementById('horse-row-' + id);
+  if (row) row.remove();
+}
+
+function getHorses() {
+  const rows = document.querySelectorAll('.odds-row');
+  const horses = [];
+  rows.forEach(row => {
+    const name = row.querySelector('.horse-name-input')?.value?.trim();
+    const odds = parseFloat(row.querySelector('.horse-odds-input')?.value);
+    if (name) horses.push({ name, decimalOdds: isNaN(odds) ? null : odds });
+  });
+  return horses;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════════════════════════════════
+function toggleApiVis() {
+  const field = document.getElementById('api-key');
+  field.type = field.type === 'password' ? 'text' : 'password';
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function clearError(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('visible');
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = Math.round(pct) + '%';
+  if (label) document.getElementById('loading-status').textContent = label;
+}
+
+function addLog(msg) {
+  const feed = document.getElementById('log-feed');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-dot">›</span><span>${msg}</span>`;
+  feed.appendChild(entry);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function toggleRaw() {
+  const el = document.getElementById('raw-json');
+  el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  SILK COLOURS — deterministic from horse name
+// ══════════════════════════════════════════════════════════════════════
+const SILK_PALETTES = [
+  ['#e53935','#b71c1c'], ['#1e88e5','#0d47a1'], ['#43a047','#1b5e20'],
+  ['#fb8c00','#e65100'], ['#8e24aa','#4a148c'], ['#00acc1','#006064'],
+  ['#f4511e','#bf360c'], ['#3949ab','#1a237e'], ['#00897b','#004d40'],
+  ['#c0ca33','#827717'], ['#6d4c41','#3e2723'], ['#757575','#212121'],
+  ['#fdd835','#f57f17'], ['#d81b60','#880e4f'], ['#00bcd4','#0097a7']
+];
+
+function getSilkColor(name) {
+  let hash = 0;
+  for (let c of (name || '')) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff;
+  const p = SILK_PALETTES[Math.abs(hash) % SILK_PALETTES.length];
+  return `linear-gradient(180deg, ${p[0]} 50%, ${p[1]} 50%)`;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  VALUE CALCULATIONS
+// ══════════════════════════════════════════════════════════════════════
+function calcWinEV(aiWinProb, bookDecimal) {
+  if (!bookDecimal || bookDecimal <= 1) return null;
+  return (aiWinProb / 100 * bookDecimal) - 1;
+}
+
+function calcEWEV(aiPlaceProb, bookDecimal, ewFraction, ewPlaces) {
+  if (!bookDecimal || bookDecimal <= 1) return null;
+  const ewReturn = (bookDecimal - 1) * ewFraction + 1;
+  return (aiPlaceProb / 100 * ewReturn) - 1;
+}
+
+function calcAiFairOdds(aiWinProb) {
+  if (!aiWinProb || aiWinProb <= 0) return null;
+  return (100 / aiWinProb).toFixed(2);
+}
+
+function calcImpliedProb(decimalOdds) {
+  if (!decimalOdds || decimalOdds <= 1) return null;
+  return (1 / decimalOdds * 100).toFixed(1);
+}
+
+function decimalToFractional(dec) {
+  if (!dec || dec <= 1) return '-';
+  const n = dec - 1;
+  // Simple approximation
+  const fracs = [[1,5],[2,9],[1,4],[3,10],[1,3],[2,5],[4,9],[1,2],[8,15],[4,7],[8,13],[4,6],[8,11],[4,5],[5,6],[1,1],[6,5],[5,4],[4,3],[7,4],[2,1],[9,4],[5,2],[3,1],[7,2],[4,1],[9,2],[5,1],[6,1],[7,1],[8,1],[9,1],[10,1],[12,1],[14,1],[16,1],[20,1],[25,1],[33,1],[50,1],[66,1],[100,1]];
+  let best = fracs[0], bestDiff = Infinity;
+  for (const [num, den] of fracs) {
+    const diff = Math.abs(n - num/den);
+    if (diff < bestDiff) { bestDiff = diff; best = [num,den]; }
+  }
+  return `${best[0]}/${best[1]}`;
+}
+
+function valueLabel(ev) {
+  if (ev === null) return { text: 'No odds', cls: 'badge-fair' };
+  if (ev > 0.10) return { text: 'VALUE ✅', cls: 'badge-value' };
+  if (ev > 0) return { text: 'Fair 🟡', cls: 'badge-fair' };
+  return { text: 'Overpriced 🔴', cls: 'badge-over' };
+}
+
+function ewValueLabel(ev) {
+  if (ev === null) return null;
+  if (ev > 0.08) return { text: 'E/W VALUE ⭐', cls: 'badge-value' };
+  if (ev > 0) return { text: 'E/W Fair 🟡', cls: 'badge-fair' };
+  return { text: 'E/W Poor 🔴', cls: 'badge-over' };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  START ANALYSIS
+// ══════════════════════════════════════════════════════════════════════
+async function startAnalysis() {
+  clearError('search-error');
+
+  const race = document.getElementById('race-search').value.trim();
+  const apiKey = document.getElementById('api-key').value.trim();
+  const ewFraction = parseFloat(document.getElementById('ew-fraction').value);
+  const ewPlaces = parseInt(document.getElementById('ew-places').value);
+  const horses = getHorses();
+
+  if (!race) { showError('search-error', 'Please enter a race name.'); return; }
+  if (!apiKey) { showError('search-error', 'Please enter your Claude API key.'); return; }
+  if (horses.length === 0) { showError('search-error', 'Please add at least one runner.'); return; }
+
+  appState = { ...appState, apiKey, raceSearch: race, ewFraction, ewPlaces, horses };
+
+  // Show loading screen
+  document.getElementById('loading-race-name').textContent = race;
+  document.getElementById('log-feed').innerHTML = '';
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('loading-status').textContent = 'Connecting to Claude AI…';
+  showScreen('screen-loading');
+
+  try {
+    await runAnalysis();
+  } catch (err) {
+    console.error(err);
+    showScreen('screen-search');
+    showError('search-error', '❌ Error: ' + (err.message || 'Unknown error. Check API key and try again.'));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  CALL CLAUDE API
+// ══════════════════════════════════════════════════════════════════════
+async function runAnalysis() {
+  const { apiKey, raceSearch, ewFraction, ewPlaces, horses } = appState;
+
+  const steps = [
+    [8,  'Connecting to Claude AI…'],
+    [15, 'Searching for race information…'],
+    [28, 'Researching recent form for each runner…'],
+    [42, 'Checking going conditions and forecasts…'],
+    [55, 'Analysing jockey and trainer statistics…'],
+    [65, 'Evaluating distance and track suitability…'],
+    [75, 'Calculating win probabilities…'],
+    [85, 'Computing each-way value assessments…'],
+    [92, 'Generating race narrative…'],
+    [97, 'Compiling results…']
+  ];
+
+  let stepIdx = 0;
+  const logTimer = setInterval(() => {
+    if (stepIdx < steps.length) {
+      setProgress(steps[stepIdx][0], steps[stepIdx][1]);
+      addLog(steps[stepIdx][1]);
+      stepIdx++;
+    }
+  }, 700);
+
+  const horseList = horses.map(h => `- ${h.name}${h.decimalOdds ? ` (bookmaker odds: ${h.decimalOdds})` : ''}`).join('\n');
+
+  const systemPrompt = `You are an expert horse racing analyst. Use your web search tool to research every runner in the race provided. Analyse each horse independently using: recent form (last 3 runs), distance suitability, track/course suitability, going preference vs today's forecast going, jockey and trainer statistics, draw bias, class level, weight carried, equipment changes, days since last run, and any other relevant factors.
+
+Do NOT factor in any published bookmaker odds, tipster selections, or betting market prices — your probability estimates must be entirely your own independent assessment.
+
+Also generate a short race narrative (2-4 sentences) covering the likely pace scenario, key dangers, and overall race shape. Store this in a "narrative" field.
+
+IMPORTANT: The sum of all winProbability values should ideally add up to approximately 100 (representing 100% total probability before overround). Ensure placeProbability for each horse accounts for the each-way terms: ${ewPlaces} places.
+
+Return your response as a VALID JSON OBJECT ONLY with this exact structure (no markdown, no explanation, just raw JSON):
+{
+  "race": "race name",
+  "narrative": "2-4 sentence race shape and pace analysis",
+  "horses": [
+    {
+      "name": "Horse Name",
+      "jockey": "Jockey Name",
+      "trainer": "Trainer Name",
+      "formSummary": "Last 3 runs summarised in 1-2 sentences",
+      "suitabilityScore": 75,
+      "winProbability": 12.5,
+      "placeProbability": 35.0,
+      "keyInsights": "One key insight about this horse's chance today"
+    }
+  ]
+}`;
+
+  const userPrompt = `Race: ${raceSearch}
+
+Runners (with bookmaker odds for reference only — do NOT use these in your probability calculations):
+${horseList}
+
+Each-way terms: ${ewFraction === 0.25 ? '1/4' : ewFraction === 0.2 ? '1/5' : ewFraction === 0.333 ? '1/3' : '1/2'} odds, ${ewPlaces} places
+
+Please research each runner thoroughly using web search and return your independent analysis as valid JSON.`;
+
+  addLog('Sending request to Claude AI…');
+
+  const requestBody = {
+    model: 'claude-sonnet-4-5',
+    max_tokens: 4000,
+    system: systemPrompt,
+    tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+    messages: [{ role: 'user', content: userPrompt }]
+  };
+
+  // Use XMLHttpRequest instead of fetch — more reliable in Safari when
+  // opening a local HTML file (fetch can be blocked by CORS pre-flight
+  // on file:// or local origins in iOS Safari).
+  const data = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.anthropic.com/v1/messages', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('x-api-key', apiKey);
+    xhr.setRequestHeader('anthropic-version', '2023-06-01');
+    xhr.setRequestHeader('anthropic-dangerous-direct-browser-calls', 'true');
+    xhr.timeout = 120000; // 2 min — web search calls can be slow
+
+    xhr.onload = () => {
+      let parsed;
+      try { parsed = JSON.parse(xhr.responseText); } catch (_) {
+        return reject(new Error('Could not parse API response. Raw: ' + xhr.responseText.slice(0, 200)));
+      }
+      if (xhr.status >= 400) {
+        const msg = parsed?.error?.message || `API error ${xhr.status}`;
+        return reject(new Error(`API error ${xhr.status}: ${msg}`));
+      }
+      resolve(parsed);
+    };
+
+    xhr.onerror = () => {
+      reject(new Error(
+        'Network error — the API request was blocked.\n\n' +
+        'Possible causes:\n' +
+        '• No internet connection\n' +
+        '• Safari privacy settings blocking cross-origin requests\n' +
+        '• Try: Settings → Safari → turn off "Prevent Cross-Site Tracking"\n' +
+        '• Or open the file via a local server rather than directly from Files'
+      ));
+    };
+
+    xhr.ontimeout = () => reject(new Error('Request timed out after 2 minutes. Try again.'));
+
+    xhr.send(JSON.stringify(requestBody));
+  }).finally(() => clearInterval(logTimer));
+
+  setProgress(98, 'Parsing results…');
+
+  // Store raw
+  document.getElementById('raw-json').textContent = JSON.stringify(data, null, 2);
+
+  // Extract text content from response (handle tool use blocks)
+  const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text);
+  const fullText = textBlocks.join('\n');
+
+  addLog('Received response, parsing analysis…');
+
+  // Try to extract JSON from the text
+  let parsed = null;
+  const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      // Try to find just the object
+      try {
+        const cleaned = jsonMatch[0].replace(/[\x00-\x1F\x7F]/g, ' ');
+        parsed = JSON.parse(cleaned);
+      } catch (e2) {
+        throw new Error('Failed to parse AI response as JSON. The AI may have returned an unexpected format. Please try again.');
+      }
+    }
+  }
+
+  if (!parsed || !parsed.horses || !Array.isArray(parsed.horses)) {
+    // Try harder — maybe the JSON has extra text
+    const lines = fullText.split('\n');
+    let jsonStart = -1, jsonEnd = -1, depth = 0;
+    for (let i = 0; i < lines.length; i++) {
+      for (const c of lines[i]) {
+        if (c === '{') { if (depth === 0) jsonStart = i; depth++; }
+        if (c === '}') { depth--; if (depth === 0) { jsonEnd = i; break; } }
+      }
+      if (jsonEnd >= 0) break;
+    }
+    if (jsonStart >= 0 && jsonEnd >= 0) {
+      try {
+        parsed = JSON.parse(lines.slice(jsonStart, jsonEnd + 1).join('\n'));
+      } catch (_) {}
+    }
+  }
+
+  if (!parsed || !parsed.horses) {
+    throw new Error('The AI did not return structured horse data. Please try again — sometimes a retry is needed for live data lookups.');
+  }
+
+  setProgress(100, 'Analysis complete!');
+  addLog('✓ Analysis complete — building results…');
+  appState.analysisResult = parsed;
+
+  await new Promise(r => setTimeout(r, 600));
+  buildResults();
+  showScreen('screen-results');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  BUILD RESULTS UI
+// ══════════════════════════════════════════════════════════════════════
+function buildResults() {
+  const { analysisResult, horses, ewFraction, ewPlaces, raceSearch } = appState;
+  const { horses: aiHorses, race, narrative } = analysisResult;
+
+  document.getElementById('results-race-title').textContent = race || raceSearch;
+  document.getElementById('results-race-meta').textContent =
+    `Each-way: ${ewFraction === 0.25 ? '¼' : ewFraction === 0.2 ? '⅕' : ewFraction === 0.333 ? '⅓' : '½'} odds · ${ewPlaces} places`;
+
+  // Match AI horses with user-entered odds
+  const merged = aiHorses.map(aiH => {
+    const match = horses.find(h => h.name.toLowerCase() === aiH.name.toLowerCase())
+      || horses.find(h => aiH.name.toLowerCase().includes(h.name.toLowerCase()) || h.name.toLowerCase().includes(aiH.name.toLowerCase()));
+    const decimalOdds = match?.decimalOdds || null;
+    const winEV = calcWinEV(aiH.winProbability, decimalOdds);
+    const ewEV = calcEWEV(aiH.placeProbability, decimalOdds, ewFraction, ewPlaces);
+    return { ...aiH, decimalOdds, winEV, ewEV };
+  });
+
+  // CARDS
+  const container = document.getElementById('cards-container');
+  container.innerHTML = '';
+
+  if (merged.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">🏇</div>No horse data returned.</div>';
+    return;
+  }
+
+  merged.forEach((horse, idx) => {
+    const card = buildHorseCard(horse, idx + 1);
+    container.appendChild(card);
+  });
+
+  // SUMMARY TAB
+  buildSummary(merged, narrative);
+}
+
+function buildHorseCard(h, num) {
+  const winEV = h.winEV;
+  const ewEV = h.ewEV;
+  const winVal = valueLabel(winEV);
+  const ewVal = ewEV !== null ? ewValueLabel(ewEV) : null;
+  const aiFairOdds = calcAiFairOdds(h.winProbability);
+
+  const isWinValue = winEV !== null && winEV > 0.1;
+  const isEWValue = ewEV !== null && ewEV > 0.08;
+
+  const card = document.createElement('div');
+  card.className = 'horse-card' + (isWinValue && isEWValue ? ' value-both' : isWinValue ? ' value-win' : isEWValue ? ' value-ew' : '');
+
+  const silkColor = getSilkColor(h.name);
+  const suitScore = Math.min(100, Math.max(0, h.suitabilityScore || 0));
+  const suitWidth = suitScore + '%';
+  const impliedProb = h.decimalOdds ? calcImpliedProb(h.decimalOdds) + '%' : '—';
+  const bookFrac = h.decimalOdds ? decimalToFractional(h.decimalOdds) : '—';
+
+  // EV bar width (cap at 50% scale for display)
+  const evBarWidth = winEV !== null ? Math.min(100, Math.abs(winEV) * 200) + '%' : '0%';
+  const evIsPos = winEV !== null && winEV >= 0;
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="silks-strip" style="background: ${silkColor}"></div>
+      <div class="card-header-inner">
+        <div>
+          <div class="horse-number">${num}</div>
+          <div class="horse-name">${h.name}</div>
+          <div class="horse-connections">
+            <b>J:</b> ${h.jockey || '—'} &nbsp; <b>T:</b> ${h.trainer || '—'}
+          </div>
+        </div>
+        <div class="win-prob-badge">
+          <div class="win-prob-number">${(h.winProbability || 0).toFixed(1)}</div>
+          <div class="win-prob-label">AI WIN %</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="suit-row">
+        <span class="suit-label">Suitability</span>
+        <div class="suit-bar-wrap">
+          <div class="suit-bar-fill" style="width:${suitWidth}"></div>
+        </div>
+        <span class="suit-score">${suitScore}</span>
+      </div>
+
+      <div class="form-summary">${h.formSummary || 'No form data available.'}</div>
+
+      ${h.keyInsights ? `<div class="key-insights">${h.keyInsights}</div>` : ''}
+
+      <div class="value-grid">
+        <div class="value-cell">
+          <div class="value-cell-label">Book Odds</div>
+          <div class="value-cell-val odds-display">${h.decimalOdds ? h.decimalOdds.toFixed(2) + ' <span style="color:var(--text-faint);font-size:12px">(' + bookFrac + ')</span>' : '—'}</div>
+        </div>
+        <div class="value-cell">
+          <div class="value-cell-label">AI Fair Odds</div>
+          <div class="value-cell-val odds-display">${aiFairOdds ? aiFairOdds + ' <span style="color:var(--text-faint);font-size:12px">(' + decimalToFractional(parseFloat(aiFairOdds)) + ')</span>' : '—'}</div>
+        </div>
+        <div class="value-cell">
+          <div class="value-cell-label">Implied Prob</div>
+          <div class="value-cell-val">${impliedProb}</div>
+        </div>
+        <div class="value-cell">
+          <div class="value-cell-label">Place Prob</div>
+          <div class="value-cell-val">${(h.placeProbability || 0).toFixed(1)}%</div>
+        </div>
+      </div>
+
+      <div class="ev-bar-wrap">
+        <div class="ev-bar-label">
+          <span>Win EV</span>
+          <span style="color:${winEV === null ? 'var(--text-faint)' : winEV >= 0 ? 'var(--green)' : 'var(--red)'}">
+            ${winEV !== null ? (winEV >= 0 ? '+' : '') + (winEV * 100).toFixed(1) + '%' : 'N/A'}
+          </span>
+        </div>
+        <div class="ev-bar">
+          <div class="ev-fill ${evIsPos ? 'positive' : 'negative'}" style="width:${evBarWidth}"></div>
+        </div>
+      </div>
+
+      <div style="margin: 8px 0;">
+        <span class="value-badge ${winVal.cls}">${winVal.text}</span>
+      </div>
+
+      ${h.decimalOdds ? `
+      <div class="ew-section">
+        <div class="ew-section-title">🏇 Each-Way Analysis</div>
+        <div class="ew-grid">
+          <div class="ew-cell">
+            <div class="ew-cell-label">E/W Return</div>
+            <div class="ew-cell-val">${h.decimalOdds ? (((h.decimalOdds - 1) * appState.ewFraction + 1)).toFixed(2) : '—'}</div>
+          </div>
+          <div class="ew-cell">
+            <div class="ew-cell-label">Place Prob</div>
+            <div class="ew-cell-val">${(h.placeProbability || 0).toFixed(1)}%</div>
+          </div>
+          <div class="ew-cell">
+            <div class="ew-cell-label">E/W EV</div>
+            <div class="ew-cell-val" style="color:${ewEV === null ? 'var(--text-faint)' : ewEV >= 0 ? 'var(--green)' : 'var(--red)'}">
+              ${ewEV !== null ? (ewEV >= 0 ? '+' : '') + (ewEV * 100).toFixed(1) + '%' : '—'}
+            </div>
+          </div>
+        </div>
+        ${ewVal ? `<div style="margin-top:8px"><span class="value-badge ${ewVal.cls}">${ewVal.text}</span></div>` : ''}
+        ${isEWValue ? `<div class="star-badge">⭐ Standout Each-Way Bet</div>` : ''}
+      </div>
+      ` : ''}
+    </div>
+  `;
+
+  return card;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  BUILD SUMMARY
+// ══════════════════════════════════════════════════════════════════════
+function buildSummary(horses, narrative) {
+  const container = document.getElementById('summary-container');
+  container.innerHTML = '';
+
+  // Build ranked list of value bets
+  const bets = [];
+
+  horses.forEach(h => {
+    if (h.decimalOdds) {
+      const winEV = h.winEV;
+      if (winEV !== null) {
+        bets.push({
+          name: h.name,
+          type: 'WIN',
+          bookOdds: h.decimalOdds,
+          aiFairOdds: parseFloat(calcAiFairOdds(h.winProbability)),
+          ev: winEV,
+          isValue: winEV > 0
+        });
+      }
+      const ewEV = h.ewEV;
+      if (ewEV !== null) {
+        bets.push({
+          name: h.name,
+          type: 'EACH-WAY',
+          bookOdds: h.decimalOdds,
+          aiFairOdds: parseFloat(calcAiFairOdds(h.winProbability)),
+          ev: ewEV,
+          isValue: ewEV > 0
+        });
+      }
+    }
+  });
+
+  // Sort by EV descending
+  bets.sort((a, b) => b.ev - a.ev);
+
+  // Narrative
+  if (narrative) {
+    const narDiv = document.createElement('div');
+    narDiv.className = 'narrative-box';
+    narDiv.innerHTML = `
+      <div class="narrative-title">🏇 RACE ANALYSIS</div>
+      <p>${narrative}</p>
+    `;
+    container.appendChild(narDiv);
+  }
+
+  // Value bets label
+  const valueBets = bets.filter(b => b.ev > 0);
+  const label = document.createElement('div');
+  label.className = 'section-label';
+  label.style.cssText = 'padding: 0 16px; margin-top: 8px;';
+  label.innerHTML = `Ranked Value Bets (${valueBets.length} found)`;
+  container.appendChild(label);
+
+  if (valueBets.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = '<div class="icon">📊</div><p>No value bets found at current bookmaker odds.<br>Try refreshing odds or different bookmakers.</p>';
+    container.appendChild(empty);
+  }
+
+  bets.slice(0, 15).forEach((bet, idx) => {
+    const isWin = bet.type === 'WIN';
+    const cardEl = document.createElement('div');
+    cardEl.className = 'summary-card ' + (bet.ev > 0.1 && isWin ? 'win-value' : bet.ev > 0.08 && !isWin ? 'ew-value' : '');
+    cardEl.innerHTML = `
+      <div class="summary-row">
+        <div class="summary-rank">${idx + 1}</div>
+        <div>
+          <div class="summary-horse-name">${bet.name}</div>
+          <span class="summary-bet-type">${bet.type}</span>
+        </div>
+        <div class="summary-odds">
+          <div style="font-size:10px;color:var(--text-faint);">BOOK</div>
+          <div class="odds-display" style="font-size:14px;">${bet.bookOdds.toFixed(2)}</div>
+          <div style="font-size:10px;color:var(--text-faint);margin-top:4px;">AI FAIR</div>
+          <div style="font-size:12px;color:var(--text-dim)">${bet.aiFairOdds.toFixed(2)}</div>
+        </div>
+        <div style="text-align:right;min-width:60px">
+          <div class="ev-score ${bet.ev >= 0 ? 'ev-positive' : 'ev-negative'}">
+            ${bet.ev >= 0 ? '+' : ''}${(bet.ev * 100).toFixed(1)}%
+          </div>
+          <div style="font-size:10px;color:var(--text-faint)">EV</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(cardEl);
+  });
+
+  // New Race button
+  const btnWrap = document.createElement('div');
+  btnWrap.style.cssText = 'padding: 16px;';
+  btnWrap.innerHTML = '<button class="btn-primary" onclick="newRace()" style="font-size:16px;letter-spacing:1px">＋ NEW RACE</button>';
+  container.appendChild(btnWrap);
+}
+</script>
+
+</body>
+</html>
